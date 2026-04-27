@@ -1,35 +1,71 @@
-# Atharva-Portfolio-1w
+# Atharva's Portfolio
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+A premium, modern, and dynamic personal portfolio website built with Next.js and MongoDB. This project features a fully functional admin dashboard that allows for real-time content updates directly from the UI, persisting data securely to a MongoDB Atlas backend.
 
-## Built with v0
+## Features
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+- **Dynamic Content Management:** Log in via the built-in admin modal to edit your hero section, about details, skills, projects, and experience directly on the page.
+- **MongoDB Integration:** All portfolio data is securely saved and fetched from a MongoDB Atlas database, ensuring changes are permanent and globally accessible.
+- **Modern UI/UX:** Built with React and Tailwind CSS, featuring glassmorphism, responsive layouts, hover effects, and custom animations.
+- **Dark Mode Optimized:** Designed specifically for a sleek, neon-accented dark mode experience.
+- **Fully Responsive:** Looks and functions perfectly across all devices—from mobile phones to ultra-wide desktop monitors.
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_sPBVlstEpgGfHWRT6s1chtrvGsWX)
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Frontend:** React, Tailwind CSS, Lucide React (Icons)
+- **Database:** MongoDB Atlas with Mongoose
+- **Language:** TypeScript
+- **Styling:** PostCSS, Custom CSS Variables
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+Make sure you have the following installed on your machine:
+- [Node.js](https://nodejs.org/en/) (v18 or higher)
+- [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
+- A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account and database
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Atharva7652005/Atharva_Portfolio.git
+   cd Atharva_Portfolio
+   ```
 
-## Learn More
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-To learn more, take a look at the following resources:
+3. Set up environment variables:
+   Copy the example environment file and add your MongoDB connection string.
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and configure your URI:
+   ```env
+   MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/portfolio?retryWrites=true&w=majority
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-<a href="https://v0.app/chat/api/kiro/clone/Atharva7652005/Atharva-Portfolio-1w" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+5. Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
+
+## Admin Access
+
+To access the admin features and edit your portfolio:
+1. Click the floating **Lock** icon in the bottom right corner.
+2. Enter the admin credentials.
+3. Click the inline **Edit (Pencil)** icons on different sections to update the content.
+4. Click the **Save** button in the bottom right corner to persist your changes to MongoDB.
+
+## 👨‍💻 Author
+
+**Atharva Khairnar**
+- GitHub: [@Atharva7652005](https://github.com/Atharva7652005)
