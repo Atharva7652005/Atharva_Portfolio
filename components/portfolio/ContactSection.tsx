@@ -1,16 +1,21 @@
 'use client'
 
 import { useEffect, useRef, useState, FormEvent } from 'react'
-import { Send, Github, Linkedin, Twitter, Mail, MapPin, Loader2 } from 'lucide-react'
+import { Send, Github, Linkedin, Twitter, Mail, MapPin, Loader2, Pencil, Plus, X } from 'lucide-react'
+import { useAdmin } from './admin/AdminContext'
+import { EditableText } from './admin/EditableText'
 
-const socialLinks = [
-  { icon: Github, href: '[GITHUB_URL]', label: 'GitHub', color: 'hover:text-white' },
-  { icon: Linkedin, href: '[LINKEDIN_URL]', label: 'LinkedIn', color: 'hover:text-blue-400' },
-  { icon: Twitter, href: '[TWITTER_URL]', label: 'Twitter', color: 'hover:text-cyan-400' },
-  { icon: Mail, href: 'mailto:[YOUR_EMAIL]', label: 'Email', color: 'hover:text-primary' },
-]
+const iconMap: Record<string, React.ElementType> = {
+  GitHub: Github,
+  LinkedIn: Linkedin,
+  Twitter: Twitter,
+  Email: Mail,
+}
 
 export function ContactSection() {
+  const { data, updateContact, isEditMode } = useAdmin()
+  const { heading, subtext, location, email, socialLinks } = data.contact
+
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -20,6 +25,7 @@ export function ContactSection() {
     email: '',
     message: '',
   })
+  const [editingSocials, setEditingSocials] = useState(false)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -53,6 +59,24 @@ export function ContactSection() {
     setTimeout(() => setSubmitted(false), 5000)
   }
 
+  const handleAddSocialLink = () => {
+    updateContact({
+      socialLinks: [...socialLinks, { platform: 'New', url: '#', color: 'hover:text-primary' }]
+    })
+  }
+
+  const handleRemoveSocialLink = (index: number) => {
+    updateContact({
+      socialLinks: socialLinks.filter((_, i) => i !== index)
+    })
+  }
+
+  const handleUpdateSocialLink = (index: number, updates: Partial<typeof socialLinks[0]>) => {
+    const newLinks = [...socialLinks]
+    newLinks[index] = { ...newLinks[index], ...updates }
+    updateContact({ socialLinks: newLinks })
+  }
+
   return (
     <section
       ref={sectionRef}
@@ -75,12 +99,21 @@ export function ContactSection() {
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold font-mono mb-4">
             <span className="text-primary">{'<'}</span>
-            Contact
+            <EditableText
+              value={heading}
+              onChange={(value) => updateContact({ heading: value })}
+              className="inline"
+            />
             <span className="text-primary">{' />'}</span>
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Have a project in mind or just want to chat? Feel free to reach out!
-          </p>
+          <div className="text-muted-foreground max-w-2xl mx-auto">
+            <EditableText
+              value={subtext}
+              onChange={(value) => updateContact({ subtext: value })}
+              tag="p"
+              className="text-muted-foreground"
+            />
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
@@ -129,7 +162,7 @@ export function ContactSection() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                      placeholder="[YOUR NAME]"
+                      placeholder="Your name"
                     />
                   </div>
 
@@ -145,7 +178,7 @@ export function ContactSection() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                      placeholder="[YOUR_EMAIL@EXAMPLE.COM]"
+                      placeholder="your@email.com"
                     />
                   </div>
 
@@ -161,7 +194,7 @@ export function ContactSection() {
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
-                      placeholder="[YOUR MESSAGE HERE...]"
+                      placeholder="Your message..."
                     />
                   </div>
 
@@ -206,9 +239,14 @@ export function ContactSection() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                     <MapPin className="w-6 h-6 text-primary" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-mono text-lg font-semibold text-foreground">Location</h3>
-                    <p className="text-muted-foreground">[YOUR CITY], [YOUR COUNTRY]</p>
+                    <EditableText
+                      value={location}
+                      onChange={(value) => updateContact({ location: value })}
+                      tag="p"
+                      className="text-muted-foreground"
+                    />
                   </div>
                 </div>
                 <p className="text-muted-foreground text-sm">
@@ -222,14 +260,22 @@ export function ContactSection() {
                   <div className="w-12 h-12 rounded-lg bg-neon-secondary/10 flex items-center justify-center">
                     <Mail className="w-6 h-6 text-neon-secondary" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-mono text-lg font-semibold text-foreground">Email</h3>
-                    <a
-                      href="mailto:[YOUR_EMAIL]"
-                      className="text-primary hover:underline"
-                    >
-                      [YOUR_EMAIL@EXAMPLE.COM]
-                    </a>
+                    {isEditMode ? (
+                      <EditableText
+                        value={email}
+                        onChange={(value) => updateContact({ email: value })}
+                        className="text-primary"
+                      />
+                    ) : (
+                      <a
+                        href={`mailto:${email}`}
+                        className="text-primary hover:underline"
+                      >
+                        {email}
+                      </a>
+                    )}
                   </div>
                 </div>
                 <p className="text-muted-foreground text-sm">
@@ -239,23 +285,74 @@ export function ContactSection() {
 
               {/* Social Links */}
               <div className="glass rounded-xl p-6">
-                <h3 className="font-mono text-lg font-semibold text-foreground mb-4">
-                  Connect With Me
-                </h3>
-                <div className="flex gap-4">
-                  {socialLinks.map(({ icon: Icon, href, label, color }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`p-4 rounded-lg glass text-muted-foreground ${color} transition-all duration-300 hover:scale-110 hover:border-primary/30 group`}
-                      aria-label={label}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-mono text-lg font-semibold text-foreground">
+                    Connect With Me
+                  </h3>
+                  {isEditMode && (
+                    <button
+                      onClick={() => setEditingSocials(!editingSocials)}
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-primary/20 text-primary text-xs font-mono hover:bg-primary/30 transition-colors"
                     >
-                      <Icon className="w-6 h-6 group-hover:animate-bounce" />
-                    </a>
-                  ))}
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </button>
+                  )}
                 </div>
+
+                {editingSocials && isEditMode ? (
+                  <div className="space-y-3">
+                    {socialLinks.map((link, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={link.platform}
+                          onChange={(e) => handleUpdateSocialLink(index, { platform: e.target.value })}
+                          placeholder="Platform"
+                          className="w-24 px-2 py-1 rounded bg-muted border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
+                        />
+                        <input
+                          type="text"
+                          value={link.url}
+                          onChange={(e) => handleUpdateSocialLink(index, { url: e.target.value })}
+                          placeholder="URL"
+                          className="flex-1 px-2 py-1 rounded bg-muted border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={() => handleRemoveSocialLink(index)}
+                          className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={handleAddSocialLink}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-primary/20 text-primary text-xs font-mono hover:bg-primary/30 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add Link
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-4">
+                    {socialLinks.map((link) => {
+                      const Icon = iconMap[link.platform] || Github
+                      return (
+                        <a
+                          key={link.platform}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`p-4 rounded-lg glass text-muted-foreground ${link.color} transition-all duration-300 hover:scale-110 hover:border-primary/30 group`}
+                          aria-label={link.platform}
+                        >
+                          <Icon className="w-6 h-6 group-hover:animate-bounce" />
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Availability status */}

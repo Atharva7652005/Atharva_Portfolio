@@ -1,29 +1,28 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Briefcase, CheckCircle, Coffee, Code, Heart } from 'lucide-react'
+import { MapPin, Briefcase, CheckCircle, Coffee, Code, Heart, Plus, X, Pencil } from 'lucide-react'
+import { useAdmin } from './admin/AdminContext'
+import { EditableText } from './admin/EditableText'
 
-const terminalLines = [
-  { prefix: '~', command: 'whoami', delay: 0 },
-  { prefix: '>', text: '[YOUR NAME]', delay: 100 },
-  { prefix: '~', command: 'cat location.txt', delay: 200 },
-  { prefix: '>', text: '[YOUR CITY], [YOUR COUNTRY]', icon: MapPin, delay: 300 },
-  { prefix: '~', command: 'echo $EXPERIENCE', delay: 400 },
-  { prefix: '>', text: '[X] years in tech', icon: Briefcase, delay: 500 },
-  { prefix: '~', command: 'cat status.txt', delay: 600 },
-  { prefix: '>', text: 'Open to opportunities', icon: CheckCircle, color: 'text-green-400', delay: 700 },
-]
-
-const funFacts = [
-  { icon: Coffee, label: 'Cups of coffee', value: '999+' },
-  { icon: Code, label: 'Lines of code', value: '100K+' },
-  { icon: Heart, label: 'Open source PRs', value: '50+' },
-]
+const iconMap: Record<string, React.ElementType> = {
+  MapPin,
+  Briefcase,
+  CheckCircle,
+  Coffee,
+  Code,
+  Heart,
+}
 
 export function AboutSection() {
+  const { data, updateAbout, isEditMode } = useAdmin()
+  const { bio, terminalLines, funFacts } = data.about
+
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [visibleLines, setVisibleLines] = useState<number[]>([])
+  const [editingTerminal, setEditingTerminal] = useState(false)
+  const [editingFunFacts, setEditingFunFacts] = useState(false)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -48,9 +47,42 @@ export function AboutSection() {
     terminalLines.forEach((_, index) => {
       setTimeout(() => {
         setVisibleLines((prev) => [...prev, index])
-      }, terminalLines[index].delay + index * 150)
+      }, index * 150 + 100)
     })
-  }, [isVisible])
+  }, [isVisible, terminalLines])
+
+  const handleAddTerminalLine = (type: 'command' | 'text') => {
+    const newLine = type === 'command'
+      ? { prefix: '~', command: 'new_command' }
+      : { prefix: '>', text: 'New text', color: '' }
+    updateAbout({ terminalLines: [...terminalLines, newLine] })
+  }
+
+  const handleRemoveTerminalLine = (index: number) => {
+    updateAbout({ terminalLines: terminalLines.filter((_, i) => i !== index) })
+  }
+
+  const handleUpdateTerminalLine = (index: number, updates: Partial<typeof terminalLines[0]>) => {
+    const newLines = [...terminalLines]
+    newLines[index] = { ...newLines[index], ...updates }
+    updateAbout({ terminalLines: newLines })
+  }
+
+  const handleAddFunFact = () => {
+    updateAbout({ funFacts: [...funFacts, { label: 'New fact', value: '0' }] })
+  }
+
+  const handleRemoveFunFact = (index: number) => {
+    updateAbout({ funFacts: funFacts.filter((_, i) => i !== index) })
+  }
+
+  const handleUpdateFunFact = (index: number, updates: Partial<typeof funFacts[0]>) => {
+    const newFacts = [...funFacts]
+    newFacts[index] = { ...newFacts[index], ...updates }
+    updateAbout({ funFacts: newFacts })
+  }
+
+  const funFactIcons = [Coffee, Code, Heart]
 
   return (
     <section
@@ -106,20 +138,70 @@ export function AboutSection() {
               </div>
 
               {/* Fun facts */}
-              <div className="grid grid-cols-3 gap-4">
-                {funFacts.map(({ icon: Icon, label, value }, index) => (
-                  <div
-                    key={label}
-                    className={`glass rounded-xl p-4 text-center transition-all duration-500 hover:scale-105 ${
-                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                    }`}
-                    style={{ transitionDelay: `${400 + index * 100}ms` }}
-                  >
-                    <Icon className="w-6 h-6 text-primary mx-auto mb-2" />
-                    <p className="font-mono text-xl font-bold text-foreground">{value}</p>
-                    <p className="text-xs text-muted-foreground">{label}</p>
+              {isEditMode && (
+                <button
+                  onClick={() => setEditingFunFacts(!editingFunFacts)}
+                  className="mb-4 mx-auto flex items-center gap-1 px-3 py-1 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-mono hover:bg-primary/20 transition-colors"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Fun Facts
+                </button>
+              )}
+
+              {editingFunFacts && isEditMode && (
+                <div className="mb-4 p-4 rounded-lg glass border border-primary/30">
+                  <h4 className="font-mono text-sm text-primary mb-3">Fun Facts:</h4>
+                  <div className="space-y-2 mb-3">
+                    {funFacts.map((fact, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={fact.value}
+                          onChange={(e) => handleUpdateFunFact(index, { value: e.target.value })}
+                          className="w-20 px-2 py-1 rounded bg-muted border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
+                        />
+                        <input
+                          type="text"
+                          value={fact.label}
+                          onChange={(e) => handleUpdateFunFact(index, { label: e.target.value })}
+                          className="flex-1 px-2 py-1 rounded bg-muted border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={() => handleRemoveFunFact(index)}
+                          className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                  <button
+                    onClick={handleAddFunFact}
+                    className="flex items-center gap-1 px-3 py-1 rounded-lg bg-primary/20 text-primary text-xs font-mono hover:bg-primary/30 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Fact
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-4">
+                {funFacts.map((fact, index) => {
+                  const Icon = funFactIcons[index % funFactIcons.length]
+                  return (
+                    <div
+                      key={index}
+                      className={`glass rounded-xl p-4 text-center transition-all duration-500 hover:scale-105 ${
+                        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                      }`}
+                      style={{ transitionDelay: `${400 + index * 100}ms` }}
+                    >
+                      <Icon className="w-6 h-6 text-primary mx-auto mb-2" />
+                      <p className="font-mono text-xl font-bold text-foreground">{fact.value}</p>
+                      <p className="text-xs text-muted-foreground">{fact.label}</p>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -131,22 +213,37 @@ export function AboutSection() {
             }`}
           >
             {/* Bio */}
-            <p className="text-muted-foreground text-lg leading-relaxed mb-8">
-              [YOUR BIO - Write 2-3 sentences about yourself. What drives you? What&apos;s your
-              background? What makes you unique as a developer? Share your passion for
-              technology and your journey in the tech world.]
-            </p>
+            <div className="text-muted-foreground text-lg leading-relaxed mb-8">
+              <EditableText
+                value={bio}
+                onChange={(value) => updateAbout({ bio: value })}
+                tag="p"
+                multiline
+                className="text-muted-foreground text-lg leading-relaxed"
+              />
+            </div>
 
             {/* Terminal */}
             <div className="glass rounded-xl overflow-hidden">
               {/* Terminal header */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-white/10">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                <span className="ml-4 font-mono text-xs text-muted-foreground">
-                  terminal — bash
-                </span>
+              <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                  <span className="ml-4 font-mono text-xs text-muted-foreground">
+                    terminal — bash
+                  </span>
+                </div>
+                {isEditMode && (
+                  <button
+                    onClick={() => setEditingTerminal(!editingTerminal)}
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-primary/20 text-primary text-xs font-mono hover:bg-primary/30 transition-colors"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Edit
+                  </button>
+                )}
               </div>
 
               {/* Terminal content */}
@@ -160,22 +257,65 @@ export function AboutSection() {
                         : 'opacity-0 -translate-x-4'
                     }`}
                   >
-                    <span className="text-neon-secondary">{line.prefix}</span>
-                    {'command' in line ? (
-                      <span className="text-foreground">{line.command}</span>
+                    {editingTerminal && isEditMode ? (
+                      <>
+                        <span className="text-neon-secondary">{line.prefix}</span>
+                        <input
+                          type="text"
+                          value={line.command || line.text || ''}
+                          onChange={(e) =>
+                            handleUpdateTerminalLine(index, line.command ? { command: e.target.value } : { text: e.target.value })
+                          }
+                          className="flex-1 px-2 py-1 rounded bg-muted border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={() => handleRemoveTerminalLine(index)}
+                          className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
                     ) : (
-                      <span className={`flex items-center gap-2 ${line.color || 'text-primary'}`}>
-                        {line.icon && <line.icon className="w-4 h-4" />}
-                        {line.text}
-                      </span>
+                      <>
+                        <span className="text-neon-secondary">{line.prefix}</span>
+                        {'command' in line && line.command ? (
+                          <span className="text-foreground">{line.command}</span>
+                        ) : (
+                          <span className={`flex items-center gap-2 ${line.color || 'text-primary'}`}>
+                            {line.text}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
+
+                {editingTerminal && isEditMode && (
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => handleAddTerminalLine('command')}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-primary/20 text-primary text-xs font-mono hover:bg-primary/30 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add Command
+                    </button>
+                    <button
+                      onClick={() => handleAddTerminalLine('text')}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-neon-secondary/20 text-neon-secondary text-xs font-mono hover:bg-neon-secondary/30 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add Output
+                    </button>
+                  </div>
+                )}
+
                 {/* Cursor */}
-                <div className="flex items-center gap-2">
-                  <span className="text-neon-secondary">~</span>
-                  <span className="w-2 h-4 bg-primary animate-[blink_1s_infinite]" />
-                </div>
+                {!editingTerminal && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-neon-secondary">~</span>
+                    <span className="w-2 h-4 bg-primary animate-[blink_1s_infinite]" />
+                  </div>
+                )}
               </div>
             </div>
           </div>

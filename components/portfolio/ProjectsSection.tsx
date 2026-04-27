@@ -1,63 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ExternalLink, Github, Folder } from 'lucide-react'
-
-interface Project {
-  title: string
-  description: string
-  techStack: string[]
-  liveUrl: string
-  githubUrl: string
-  featured?: boolean
-}
-
-const projects: Project[] = [
-  {
-    title: '[PROJECT NAME 1]',
-    description: '[Brief description of the project. What problem does it solve? What makes it unique? Keep it to 2-3 sentences.]',
-    techStack: ['React', 'Node.js', 'MongoDB', 'Socket.io'],
-    liveUrl: '[LIVE_URL]',
-    githubUrl: '[GITHUB_URL]',
-    featured: true,
-  },
-  {
-    title: '[PROJECT NAME 2]',
-    description: '[Brief description of the project. What problem does it solve? What makes it unique? Keep it to 2-3 sentences.]',
-    techStack: ['Next.js', 'TypeScript', 'Prisma', 'PostgreSQL'],
-    liveUrl: '[LIVE_URL]',
-    githubUrl: '[GITHUB_URL]',
-    featured: true,
-  },
-  {
-    title: '[PROJECT NAME 3]',
-    description: '[Brief description of the project. What problem does it solve? What makes it unique? Keep it to 2-3 sentences.]',
-    techStack: ['Python', 'FastAPI', 'Redis', 'Docker'],
-    liveUrl: '[LIVE_URL]',
-    githubUrl: '[GITHUB_URL]',
-  },
-  {
-    title: '[PROJECT NAME 4]',
-    description: '[Brief description of the project. What problem does it solve? What makes it unique? Keep it to 2-3 sentences.]',
-    techStack: ['React Native', 'Firebase', 'Expo'],
-    liveUrl: '[LIVE_URL]',
-    githubUrl: '[GITHUB_URL]',
-  },
-  {
-    title: '[PROJECT NAME 5]',
-    description: '[Brief description of the project. What problem does it solve? What makes it unique? Keep it to 2-3 sentences.]',
-    techStack: ['Vue.js', 'Tailwind', 'Supabase'],
-    liveUrl: '[LIVE_URL]',
-    githubUrl: '[GITHUB_URL]',
-  },
-  {
-    title: '[PROJECT NAME 6]',
-    description: '[Brief description of the project. What problem does it solve? What makes it unique? Keep it to 2-3 sentences.]',
-    techStack: ['Go', 'gRPC', 'Kubernetes'],
-    liveUrl: '[LIVE_URL]',
-    githubUrl: '[GITHUB_URL]',
-  },
-]
+import { ExternalLink, Github, Folder, Plus, X, Pencil, GripVertical } from 'lucide-react'
+import { useAdmin, Project } from './admin/AdminContext'
 
 const techColors: Record<string, string> = {
   'React': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
@@ -83,11 +28,20 @@ const techColors: Record<string, string> = {
   'Kubernetes': 'bg-blue-600/20 text-blue-400 border-blue-600/30',
 }
 
-function ProjectCard({ project, index, isVisible }: { project: Project; index: number; isVisible: boolean }) {
+interface ProjectCardProps {
+  project: Project
+  index: number
+  isVisible: boolean
+  isEditMode: boolean
+  onEdit: () => void
+  onDelete: () => void
+}
+
+function ProjectCard({ project, index, isVisible, isEditMode, onEdit, onDelete }: ProjectCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return
+    if (!cardRef.current || isEditMode) return
     const rect = cardRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
@@ -107,7 +61,7 @@ function ProjectCard({ project, index, isVisible }: { project: Project; index: n
   return (
     <div
       ref={cardRef}
-      className={`glass rounded-xl overflow-hidden transition-all duration-500 hover:border-primary/30 ${
+      className={`glass rounded-xl overflow-hidden transition-all duration-500 hover:border-primary/30 relative ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
       } ${project.featured ? 'ring-1 ring-primary/20' : ''}`}
       style={{ 
@@ -117,6 +71,24 @@ function ProjectCard({ project, index, isVisible }: { project: Project; index: n
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* Edit/Delete buttons */}
+      {isEditMode && (
+        <div className="absolute top-2 left-2 z-20 flex gap-1">
+          <button
+            onClick={onEdit}
+            className="p-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Featured badge */}
       {project.featured && (
         <div className="absolute top-4 right-4 z-10">
@@ -188,9 +160,115 @@ function ProjectCard({ project, index, isVisible }: { project: Project; index: n
   )
 }
 
+interface ProjectFormProps {
+  project?: Project
+  onSave: (project: Omit<Project, 'id'> & { id?: string }) => void
+  onCancel: () => void
+}
+
+function ProjectForm({ project, onSave, onCancel }: ProjectFormProps) {
+  const [title, setTitle] = useState(project?.title || '')
+  const [description, setDescription] = useState(project?.description || '')
+  const [techStack, setTechStack] = useState(project?.techStack.join(', ') || '')
+  const [liveUrl, setLiveUrl] = useState(project?.liveUrl || '')
+  const [githubUrl, setGithubUrl] = useState(project?.githubUrl || '')
+  const [featured, setFeatured] = useState(project?.featured || false)
+
+  const handleSubmit = () => {
+    if (title.trim()) {
+      onSave({
+        id: project?.id,
+        title: title.trim(),
+        description: description.trim(),
+        techStack: techStack.split(',').map(t => t.trim()).filter(Boolean),
+        liveUrl: liveUrl.trim(),
+        githubUrl: githubUrl.trim(),
+        featured,
+      })
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={onCancel} />
+      <div className="relative w-full max-w-lg glass rounded-xl p-6 border border-primary/30">
+        <h3 className="font-mono text-lg font-semibold text-primary mb-4">
+          {project ? 'Edit Project' : 'Add New Project'}
+        </h3>
+        <div className="space-y-4">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Project Title"
+            className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Project Description"
+            rows={3}
+            className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none"
+          />
+          <input
+            type="text"
+            value={techStack}
+            onChange={(e) => setTechStack(e.target.value)}
+            placeholder="Tech Stack (comma separated)"
+            className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          />
+          <input
+            type="text"
+            value={liveUrl}
+            onChange={(e) => setLiveUrl(e.target.value)}
+            placeholder="Live Demo URL"
+            className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          />
+          <input
+            type="text"
+            value={githubUrl}
+            onChange={(e) => setGithubUrl(e.target.value)}
+            placeholder="GitHub URL"
+            className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+          />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={featured}
+              onChange={(e) => setFeatured(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-primary"
+            />
+            <span className="font-mono text-sm text-foreground">Featured Project</span>
+          </label>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-4 py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-medium hover:opacity-90 transition-all"
+            >
+              {project ? 'Save Changes' : 'Add Project'}
+            </button>
+            <button
+              onClick={onCancel}
+              className="px-4 py-3 rounded-lg bg-muted text-muted-foreground font-mono text-sm hover:bg-muted/80 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ProjectsSection() {
+  const { data, addProject, removeProject, updateProject, isEditMode, showToast } = useAdmin()
+  const projects = data.projects
+
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -208,6 +286,24 @@ export function ProjectsSection() {
 
     return () => observer.disconnect()
   }, [])
+
+  const handleSaveProject = (projectData: Omit<Project, 'id'> & { id?: string }) => {
+    if (projectData.id) {
+      updateProject(projectData.id, projectData)
+      showToast('Project updated!')
+    } else {
+      addProject({ ...projectData, id: Date.now().toString() })
+      showToast('Project added!')
+    }
+    setShowForm(false)
+    setEditingProject(null)
+  }
+
+  const handleDeleteProject = (id: string) => {
+    removeProject(id)
+    setDeleteConfirm(null)
+    showToast('Project deleted!')
+  }
 
   return (
     <section
@@ -239,14 +335,33 @@ export function ProjectsSection() {
           </p>
         </div>
 
+        {/* Add Project Button */}
+        {isEditMode && (
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary/20 border border-primary/30 text-primary font-mono text-sm hover:bg-primary/30 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Add New Project
+            </button>
+          </div>
+        )}
+
         {/* Projects Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project, index) => (
             <ProjectCard
-              key={project.title}
+              key={project.id}
               project={project}
               index={index}
               isVisible={isVisible}
+              isEditMode={isEditMode}
+              onEdit={() => {
+                setEditingProject(project)
+                setShowForm(true)
+              }}
+              onDelete={() => setDeleteConfirm(project.id)}
             />
           ))}
         </div>
@@ -268,6 +383,43 @@ export function ProjectsSection() {
           </a>
         </div>
       </div>
+
+      {/* Project Form Modal */}
+      {showForm && (
+        <ProjectForm
+          project={editingProject || undefined}
+          onSave={handleSaveProject}
+          onCancel={() => {
+            setShowForm(false)
+            setEditingProject(null)
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={() => setDeleteConfirm(null)} />
+          <div className="relative w-full max-w-sm glass rounded-xl p-6 border border-destructive/30 text-center">
+            <h3 className="font-mono text-lg font-semibold text-foreground mb-2">Delete Project?</h3>
+            <p className="text-muted-foreground text-sm mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleDeleteProject(deleteConfirm)}
+                className="flex-1 px-4 py-2 rounded-lg bg-destructive text-white font-mono text-sm hover:opacity-90 transition-all"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2 rounded-lg bg-muted text-muted-foreground font-mono text-sm hover:bg-muted/80 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

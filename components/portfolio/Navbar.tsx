@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Menu, X, Terminal } from 'lucide-react'
+import { useAdmin } from './admin/AdminContext'
 
 const navLinks = [
   { href: '#home', label: 'Home' },
@@ -13,6 +14,7 @@ const navLinks = [
 ]
 
 export function Navbar() {
+  const { isLoggedIn } = useAdmin()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
@@ -49,7 +51,9 @@ export function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
+        isLoggedIn ? 'top-10' : 'top-0'
+      } ${
         isScrolled
           ? 'glass py-3'
           : 'bg-transparent py-5'

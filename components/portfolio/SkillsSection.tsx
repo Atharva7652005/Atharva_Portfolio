@@ -1,49 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Plus, X, Pencil } from 'lucide-react'
+import { useAdmin, Skill } from './admin/AdminContext'
 
-interface Skill {
-  name: string
-  level: number
-  icon: string
-}
-
-interface SkillCategory {
-  title: string
-  skills: Skill[]
-}
-
-const skillCategories: SkillCategory[] = [
-  {
-    title: 'Languages',
-    skills: [
-      { name: 'JavaScript', level: 95, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg' },
-      { name: 'TypeScript', level: 90, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg' },
-      { name: 'Python', level: 85, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg' },
-      { name: 'Go', level: 70, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg' },
-    ],
-  },
-  {
-    title: 'Frameworks',
-    skills: [
-      { name: 'React', level: 95, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg' },
-      { name: 'Next.js', level: 90, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg' },
-      { name: 'Node.js', level: 90, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg' },
-      { name: 'Express', level: 85, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg' },
-    ],
-  },
-  {
-    title: 'Tools & DevOps',
-    skills: [
-      { name: 'Git', level: 95, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg' },
-      { name: 'Docker', level: 80, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg' },
-      { name: 'AWS', level: 75, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg' },
-      { name: 'PostgreSQL', level: 85, icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg' },
-    ],
-  },
-]
-
-function SkillBar({ skill, isVisible, delay }: { skill: Skill; isVisible: boolean; delay: number }) {
+function SkillBar({ skill, isVisible, delay, onRemove, isEditMode }: { 
+  skill: Skill
+  isVisible: boolean
+  delay: number
+  onRemove?: () => void
+  isEditMode: boolean
+}) {
   const [width, setWidth] = useState(0)
 
   useEffect(() => {
@@ -54,10 +21,18 @@ function SkillBar({ skill, isVisible, delay }: { skill: Skill; isVisible: boolea
   }, [isVisible, skill.level, delay])
 
   return (
-    <div className="group">
+    <div className="group relative">
+      {isEditMode && onRemove && (
+        <button
+          onClick={onRemove}
+          className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
       <div className="flex items-center gap-3 mb-2">
         <div className="w-8 h-8 p-1 rounded-lg glass flex items-center justify-center group-hover:scale-110 transition-transform">
-          <img src={skill.icon} alt={skill.name} className="w-6 h-6" />
+          <img src={skill.icon} alt={skill.name} className="w-6 h-6" crossOrigin="anonymous" />
         </div>
         <span className="font-mono text-sm text-foreground flex-1">{skill.name}</span>
         <span className="font-mono text-xs text-primary">{skill.level}%</span>
@@ -74,14 +49,28 @@ function SkillBar({ skill, isVisible, delay }: { skill: Skill; isVisible: boolea
   )
 }
 
-function HexagonSkill({ skill, isVisible, delay }: { skill: Skill; isVisible: boolean; delay: number }) {
+function HexagonSkill({ skill, isVisible, delay, onRemove, isEditMode }: { 
+  skill: Skill
+  isVisible: boolean
+  delay: number
+  onRemove?: () => void
+  isEditMode: boolean
+}) {
   return (
     <div
-      className={`group transition-all duration-500 ${
+      className={`group relative transition-all duration-500 ${
         isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
+      {isEditMode && onRemove && (
+        <button
+          onClick={onRemove}
+          className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
       <div className="relative w-24 h-28 mx-auto">
         {/* Hexagon shape */}
         <svg viewBox="0 0 100 115" className="w-full h-full">
@@ -102,7 +91,7 @@ function HexagonSkill({ skill, isVisible, delay }: { skill: Skill; isVisible: bo
         {/* Icon */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-12 h-12 p-2 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-            <img src={skill.icon} alt={skill.name} className="w-full h-full" />
+            <img src={skill.icon} alt={skill.name} className="w-full h-full" crossOrigin="anonymous" />
           </div>
         </div>
       </div>
@@ -112,10 +101,81 @@ function HexagonSkill({ skill, isVisible, delay }: { skill: Skill; isVisible: bo
   )
 }
 
+interface AddSkillFormProps {
+  onAdd: (skill: Skill) => void
+  onCancel: () => void
+}
+
+function AddSkillForm({ onAdd, onCancel }: AddSkillFormProps) {
+  const [name, setName] = useState('')
+  const [level, setLevel] = useState(50)
+  const [icon, setIcon] = useState('')
+
+  const handleSubmit = () => {
+    if (name.trim() && icon.trim()) {
+      onAdd({ name: name.trim(), level, icon: icon.trim() })
+      setName('')
+      setLevel(50)
+      setIcon('')
+    }
+  }
+
+  return (
+    <div className="p-4 rounded-lg glass border border-primary/30 mt-4">
+      <h4 className="font-mono text-sm text-primary mb-3">Add New Skill</h4>
+      <div className="space-y-3">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Skill name"
+          className="w-full px-3 py-2 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+        />
+        <input
+          type="text"
+          value={icon}
+          onChange={(e) => setIcon(e.target.value)}
+          placeholder="Icon URL (e.g., from devicon CDN)"
+          className="w-full px-3 py-2 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+        />
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm text-muted-foreground">Level: {level}%</span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={level}
+            onChange={(e) => setLevel(Number(e.target.value))}
+            className="flex-1 accent-primary"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSubmit}
+            className="flex-1 px-3 py-2 rounded-lg bg-primary/20 text-primary font-mono text-sm hover:bg-primary/30 transition-colors"
+          >
+            Add Skill
+          </button>
+          <button
+            onClick={onCancel}
+            className="px-3 py-2 rounded-lg bg-muted text-muted-foreground font-mono text-sm hover:bg-muted/80 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function SkillsSection() {
+  const { data, addSkill, removeSkill, isEditMode } = useAdmin()
+  const skills = data.skills
+
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [viewMode, setViewMode] = useState<'bars' | 'hexagons'>('bars')
+  const [addingSkillTo, setAddingSkillTo] = useState<number | null>(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -133,6 +193,11 @@ export function SkillsSection() {
 
     return () => observer.disconnect()
   }, [])
+
+  const handleAddSkill = (categoryIndex: number, skill: Skill) => {
+    addSkill(categoryIndex, skill)
+    setAddingSkillTo(null)
+  }
 
   return (
     <section
@@ -197,7 +262,7 @@ export function SkillsSection() {
         {/* Skills Grid */}
         {viewMode === 'bars' ? (
           <div className="grid md:grid-cols-3 gap-8">
-            {skillCategories.map((category, catIndex) => (
+            {skills.map((category, catIndex) => (
               <div
                 key={category.title}
                 className={`glass rounded-xl p-6 transition-all duration-700 ${
@@ -216,15 +281,36 @@ export function SkillsSection() {
                       skill={skill}
                       isVisible={isVisible}
                       delay={500 + catIndex * 200 + skillIndex * 150}
+                      onRemove={() => removeSkill(catIndex, skillIndex)}
+                      isEditMode={isEditMode}
                     />
                   ))}
                 </div>
+
+                {isEditMode && (
+                  <>
+                    {addingSkillTo === catIndex ? (
+                      <AddSkillForm
+                        onAdd={(skill) => handleAddSkill(catIndex, skill)}
+                        onCancel={() => setAddingSkillTo(null)}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setAddingSkillTo(catIndex)}
+                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-dashed border-primary/30 text-primary/70 font-mono text-sm hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Skill
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             ))}
           </div>
         ) : (
           <div className="space-y-12">
-            {skillCategories.map((category, catIndex) => (
+            {skills.map((category, catIndex) => (
               <div
                 key={category.title}
                 className={`transition-all duration-700 ${
@@ -243,8 +329,29 @@ export function SkillsSection() {
                       skill={skill}
                       isVisible={isVisible}
                       delay={500 + catIndex * 200 + skillIndex * 100}
+                      onRemove={() => removeSkill(catIndex, skillIndex)}
+                      isEditMode={isEditMode}
                     />
                   ))}
+
+                  {isEditMode && (
+                    addingSkillTo === catIndex ? (
+                      <div className="w-full max-w-md">
+                        <AddSkillForm
+                          onAdd={(skill) => handleAddSkill(catIndex, skill)}
+                          onCancel={() => setAddingSkillTo(null)}
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAddingSkillTo(catIndex)}
+                        className="w-24 h-28 flex flex-col items-center justify-center rounded-lg border border-dashed border-primary/30 text-primary/70 font-mono text-sm hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                      >
+                        <Plus className="w-6 h-6 mb-1" />
+                        Add
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             ))}

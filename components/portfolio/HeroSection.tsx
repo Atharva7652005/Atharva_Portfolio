@@ -1,14 +1,9 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { ChevronDown, Github, Linkedin, Twitter } from 'lucide-react'
-
-const roles = [
-  'Full Stack Developer',
-  'Open Source Enthusiast',
-  'UI/UX Designer',
-  'Problem Solver',
-]
+import { ChevronDown, Github, Linkedin, Twitter, Plus, X, Pencil } from 'lucide-react'
+import { useAdmin } from './admin/AdminContext'
+import { EditableText } from './admin/EditableText'
 
 const codeSnippet = `const developer = {
   name: "[YOUR NAME]",
@@ -24,10 +19,15 @@ while (developer.coffee > 0) {
 }`
 
 export function HeroSection() {
+  const { data, updateHero, isEditMode } = useAdmin()
+  const { name, roles, subtitle, ctaText, socialLinks } = data.hero
+
   const [displayText, setDisplayText] = useState('')
   const [roleIndex, setRoleIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showGreeting, setShowGreeting] = useState(false)
+  const [editingRoles, setEditingRoles] = useState(false)
+  const [newRole, setNewRole] = useState('')
   const sectionRef = useRef<HTMLElement>(null)
 
   // Greeting animation
@@ -38,7 +38,8 @@ export function HeroSection() {
 
   // Typewriter effect for roles
   useEffect(() => {
-    const currentRole = roles[roleIndex]
+    if (roles.length === 0) return
+    const currentRole = roles[roleIndex % roles.length]
     const typeSpeed = isDeleting ? 50 : 100
     const pauseTime = isDeleting ? 500 : 2000
 
@@ -62,12 +63,36 @@ export function HeroSection() {
     }, typeSpeed)
 
     return () => clearTimeout(timer)
-  }, [displayText, isDeleting, roleIndex])
+  }, [displayText, isDeleting, roleIndex, roles])
 
   const scrollToWork = () => {
     const projectsSection = document.getElementById('projects')
     if (projectsSection) {
       projectsSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  const handleAddRole = () => {
+    if (newRole.trim()) {
+      updateHero({ roles: [...roles, newRole.trim()] })
+      setNewRole('')
+    }
+  }
+
+  const handleRemoveRole = (index: number) => {
+    updateHero({ roles: roles.filter((_, i) => i !== index) })
+  }
+
+  const getIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'github':
+        return Github
+      case 'linkedin':
+        return Linkedin
+      case 'twitter':
+        return Twitter
+      default:
+        return Github
     }
   }
 
@@ -91,11 +116,10 @@ export function HeroSection() {
           <div className="text-center lg:text-left">
             {/* Greeting */}
             <div
-              className={`transition-all duration-700 ${
-                showGreeting
+              className={`transition-all duration-700 ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
-              }`}
+                }`}
             >
               <span className="inline-block px-4 py-2 rounded-full glass text-primary font-mono text-sm mb-6">
                 {'>'} Hello, World!
@@ -104,28 +128,25 @@ export function HeroSection() {
 
             {/* Name with glitch effect */}
             <h1
-              className={`text-4xl sm:text-5xl lg:text-6xl font-bold font-mono mb-4 transition-all duration-700 delay-200 ${
-                showGreeting
+              className={`text-4xl sm:text-5xl lg:text-6xl font-bold font-mono mb-4 transition-all duration-700 delay-200 ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
-              }`}
+                }`}
             >
               <span className="text-muted-foreground">{"I'm "}</span>
-              <span className="text-primary neon-text relative">
-                [YOUR NAME]
-                <span className="absolute inset-0 text-neon-secondary opacity-0 hover:opacity-100 transition-opacity duration-100 hover:animate-[glitch_0.3s_ease-in-out]">
-                  [YOUR NAME]
-                </span>
-              </span>
+              <EditableText
+                value={name}
+                onChange={(value) => updateHero({ name: value })}
+                className="text-primary neon-text relative inline-block"
+              />
             </h1>
 
             {/* Animated role */}
             <div
-              className={`h-12 mb-6 transition-all duration-700 delay-300 ${
-                showGreeting
+              className={`min-h-[48px] mb-6 transition-all duration-700 delay-300 ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
-              }`}
+                }`}
             >
               <p className="text-xl sm:text-2xl font-mono text-foreground">
                 <span className="text-neon-secondary">{'<'}</span>
@@ -133,27 +154,77 @@ export function HeroSection() {
                 <span className="inline-block w-0.5 h-6 bg-primary ml-1 animate-[blink_1s_infinite]" />
                 <span className="text-neon-secondary">{' />'}</span>
               </p>
+
+              {/* Edit Roles Button */}
+              {isEditMode && (
+                <button
+                  onClick={() => setEditingRoles(!editingRoles)}
+                  className="mt-2 flex items-center gap-1 px-3 py-1 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-mono hover:bg-primary/20 transition-colors"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Roles
+                </button>
+              )}
+
+              {/* Roles Editor */}
+              {isEditMode && editingRoles && (
+                <div className="mt-4 p-4 rounded-lg glass border border-primary/30 text-left">
+                  <h4 className="font-mono text-sm text-primary mb-3">Typewriter Roles:</h4>
+                  <div className="space-y-2 mb-3">
+                    {roles.map((role, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <span className="flex-1 font-mono text-sm text-foreground">{role}</span>
+                        <button
+                          onClick={() => handleRemoveRole(index)}
+                          className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newRole}
+                      onChange={(e) => setNewRole(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddRole()}
+                      placeholder="Add new role..."
+                      className="flex-1 px-3 py-2 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={handleAddRole}
+                      className="p-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Description */}
-            <p
-              className={`text-muted-foreground text-lg max-w-xl mx-auto lg:mx-0 mb-8 transition-all duration-700 delay-400 ${
-                showGreeting
+            <div
+              className={`text-muted-foreground text-lg max-w-xl mx-auto lg:mx-0 mb-8 transition-all duration-700 delay-400 ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
-              }`}
+                }`}
             >
-              Crafting digital experiences with clean code and creative solutions.
-              Passionate about building products that make a difference.
-            </p>
+              <EditableText
+                value={subtitle}
+                onChange={(value) => updateHero({ subtitle: value })}
+                tag="p"
+                multiline
+                className="text-muted-foreground text-lg"
+              />
+            </div>
 
             {/* CTA Buttons */}
             <div
-              className={`flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8 transition-all duration-700 delay-500 ${
-                showGreeting
+              className={`flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8 transition-all duration-700 delay-500 ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
-              }`}
+                }`}
             >
               <button
                 onClick={scrollToWork}
@@ -163,7 +234,11 @@ export function HeroSection() {
                 <span className="absolute inset-0 bg-gradient-to-r from-primary to-neon-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="absolute inset-0 animate-[glow-pulse_2s_infinite]" />
                 <span className="relative flex items-center justify-center gap-2">
-                  View My Work
+                  <EditableText
+                    value={ctaText}
+                    onChange={(value) => updateHero({ ctaText: value })}
+                    className="text-primary-foreground"
+                  />
                   <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
                 </span>
               </button>
@@ -182,38 +257,35 @@ export function HeroSection() {
 
             {/* Social Links */}
             <div
-              className={`flex gap-4 justify-center lg:justify-start transition-all duration-700 delay-600 ${
-                showGreeting
+              className={`flex gap-4 justify-center lg:justify-start transition-all duration-700 delay-600 ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
-              }`}
+                }`}
             >
-              {[
-                { icon: Github, href: '[GITHUB_URL]', label: 'GitHub' },
-                { icon: Linkedin, href: '[LINKEDIN_URL]', label: 'LinkedIn' },
-                { icon: Twitter, href: '[TWITTER_URL]', label: 'Twitter' },
-              ].map(({ icon: Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 rounded-lg glass text-muted-foreground hover:text-primary hover:border-primary/50 transition-all duration-300 group"
-                  aria-label={label}
-                >
-                  <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                </a>
-              ))}
+              {socialLinks.map(({ platform, url }) => {
+                const Icon = getIcon(platform)
+                return (
+                  <a
+                    key={platform}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-lg glass text-muted-foreground hover:text-primary hover:border-primary/50 transition-all duration-300 group"
+                    aria-label={platform}
+                  >
+                    <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </a>
+                )
+              })}
             </div>
           </div>
 
           {/* Right Content - Floating Code Snippet */}
           <div
-            className={`hidden lg:block transition-all duration-1000 delay-300 ${
-              showGreeting
+            className={`hidden lg:block transition-all duration-1000 delay-300 ${showGreeting
                 ? 'opacity-100 translate-x-0'
                 : 'opacity-0 translate-x-8'
-            }`}
+              }`}
           >
             <div className="relative animate-[float_6s_ease-in-out_infinite]">
               {/* Code window */}
