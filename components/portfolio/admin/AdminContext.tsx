@@ -298,21 +298,44 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Load saved data and auth state on mount
   useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY)
-    if (savedData) {
+    const fetchPortfolioData = async () => {
       try {
-        const parsed = JSON.parse(savedData)
-        // Merge with defaults to ensure new fields exist
-        setData({
-          ...defaultData,
-          ...parsed,
-          hero: { ...defaultData.hero, ...parsed.hero },
-          about: { ...defaultData.about, ...parsed.about },
-        })
-      } catch (e) {
-        console.error('Failed to parse saved data:', e)
+        const response = await fetch('/api/portfolio');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data) {
+            setData({
+              ...defaultData,
+              ...result.data,
+              hero: { ...defaultData.hero, ...result.data.hero },
+              about: { ...defaultData.about, ...result.data.about },
+            });
+            return; // Data loaded from DB successfully
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data from MongoDB:', error);
       }
-    }
+      
+      // Fallback to local storage if DB fails or is empty initially
+      const savedData = localStorage.getItem(STORAGE_KEY)
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData)
+          // Merge with defaults to ensure new fields exist
+          setData({
+            ...defaultData,
+            ...parsed,
+            hero: { ...defaultData.hero, ...parsed.hero },
+            about: { ...defaultData.about, ...parsed.about },
+          })
+        } catch (e) {
+          console.error('Failed to parse saved data:', e)
+        }
+      }
+    };
+    
+    fetchPortfolioData();
 
     const savedAuth = localStorage.getItem(AUTH_KEY)
     if (savedAuth === 'true') {
@@ -449,10 +472,30 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setHasUnsavedChanges(true)
   }
 
-  const saveChanges = () => {
+  const saveChanges = async () => {
+    try {
+      const response = await fetch('/api/portfolio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        setHasUnsavedChanges(false)
+        showToast('Changes saved successfully to database!')
+      } else {
+        showToast('Failed to save to database. Check console.')
+        console.error('Failed response:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving to MongoDB:', error);
+      showToast('Error saving to database.')
+    }
+
+    // Also keep local storage updated as a backup
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    setHasUnsavedChanges(false)
-    showToast('Changes saved successfully!')
   }
 
   return (

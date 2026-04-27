@@ -19,8 +19,8 @@ export function AdminToolbar() {
         </div>
       </div>
 
-      {/* Control Buttons - Stacked at bottom right above admin button */}
-      <div className="fixed bottom-[90px] right-[30px] z-[999] flex flex-col items-center gap-3">
+      {/* Control Buttons - Stacked at bottom right */}
+      <div className="fixed bottom-[30px] right-[30px] z-[999] flex flex-col items-center gap-3">
         {/* Logout button (top) */}
         <button
           onClick={logout}

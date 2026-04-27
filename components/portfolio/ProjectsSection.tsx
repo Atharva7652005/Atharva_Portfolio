@@ -232,15 +232,6 @@ function ProjectForm({ project, onSave, onCancel }: ProjectFormProps) {
             placeholder="GitHub URL"
             className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={featured}
-              onChange={(e) => setFeatured(e.target.checked)}
-              className="w-4 h-4 rounded border-border accent-primary"
-            />
-            <span className="font-mono text-sm text-foreground">Featured Project</span>
-          </label>
           <div className="flex gap-3">
             <button
               onClick={handleSubmit}

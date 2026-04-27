@@ -14,11 +14,11 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: '[YOUR NAME] | Full Stack Developer',
+  title: 'Atharva Portfolio',
   description: 'Full Stack Developer & Open Source Enthusiast. Building the future with code.',
   generator: 'v0.app',
   keywords: ['developer', 'full stack', 'web development', 'portfolio', 'react', 'nextjs'],
-  authors: [{ name: '[YOUR NAME]' }],
+  authors: [{ name: 'Atharva' }],
   icons: {
     icon: [
       {

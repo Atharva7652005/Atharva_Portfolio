@@ -156,7 +156,7 @@ export function HeroSection() {
     <section
       ref={sectionRef}
       id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
+      className="relative z-20 min-h-screen flex items-center justify-center overflow-visible pt-20"
       style={{ boxSizing: 'border-box' }}
     >
       {/* Animated grid background */}
@@ -314,7 +314,7 @@ export function HeroSection() {
 
             {/* Social Links with Inline Edit */}
             <div
-              className={`flex gap-4 justify-center lg:justify-start transition-all duration-700 delay-600 ${showGreeting
+              className={`flex gap-4 justify-center lg:justify-start transition-all duration-700 delay-600 relative z-[60] ${showGreeting
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-4'
                 }`}

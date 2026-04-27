@@ -6,6 +6,8 @@ import { useAdmin } from './AdminContext'
 export function AdminFloatingButton() {
   const { isLoggedIn, toggleLoginModal } = useAdmin()
 
+  if (isLoggedIn) return null
+
   return (
     <button
       onClick={toggleLoginModal}
