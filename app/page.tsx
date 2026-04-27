@@ -14,10 +14,14 @@ import { AdminFloatingButton } from '@/components/portfolio/admin/AdminFloatingB
 import { LoginModal } from '@/components/portfolio/admin/LoginModal'
 import { AdminToolbar } from '@/components/portfolio/admin/AdminToolbar'
 import { Toast } from '@/components/portfolio/admin/Toast'
+import { NeonCursor } from '@/components/portfolio/NeonCursor'
 
 export default function Home() {
   return (
     <AdminProvider>
+      {/* Custom neon cursor */}
+      <NeonCursor />
+      
       <main className="relative min-h-screen">
         {/* Admin Components */}
         <AdminToolbar />

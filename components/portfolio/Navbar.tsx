@@ -51,13 +51,16 @@ export function Navbar() {
 
   return (
     <nav
-      className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed left-0 right-0 z-[1000] transition-all duration-300 ${
         isLoggedIn ? 'top-10' : 'top-0'
-      } ${
-        isScrolled
-          ? 'glass py-3'
-          : 'bg-transparent py-5'
       }`}
+      style={{
+        background: isScrolled ? 'rgba(10, 10, 20, 0.6)' : 'transparent',
+        backdropFilter: isScrolled ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: isScrolled ? 'blur(20px)' : 'none',
+        borderBottom: isScrolled ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+        padding: isScrolled ? '0.75rem 0' : '1.25rem 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">

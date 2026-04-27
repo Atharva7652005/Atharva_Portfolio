@@ -1,26 +1,13 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { ChevronDown, Github, Linkedin, Twitter, Plus, X, Pencil } from 'lucide-react'
+import { ChevronDown, Github, Linkedin, Twitter, Plus, X, Pencil, Check } from 'lucide-react'
 import { useAdmin } from './admin/AdminContext'
 import { EditableText } from './admin/EditableText'
 
-const codeSnippet = `const developer = {
-  name: "[YOUR NAME]",
-  skills: ["React", "Node.js", "TypeScript"],
-  passion: "Building amazing web apps",
-  coffee: Infinity,
-};
-
-while (developer.coffee > 0) {
-  code();
-  create();
-  innovate();
-}`
-
 export function HeroSection() {
   const { data, updateHero, isEditMode } = useAdmin()
-  const { name, roles, subtitle, ctaText, socialLinks } = data.hero
+  const { name, roles, subtitle, ctaText, socialLinks, codeSnippet } = data.hero
 
   const [displayText, setDisplayText] = useState('')
   const [roleIndex, setRoleIndex] = useState(0)
@@ -28,6 +15,9 @@ export function HeroSection() {
   const [showGreeting, setShowGreeting] = useState(false)
   const [editingRoles, setEditingRoles] = useState(false)
   const [newRole, setNewRole] = useState('')
+  const [editingSocialLink, setEditingSocialLink] = useState<string | null>(null)
+  const [socialLinkUrl, setSocialLinkUrl] = useState('')
+  const [editingCodeLine, setEditingCodeLine] = useState<number | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
 
   // Greeting animation
@@ -83,6 +73,46 @@ export function HeroSection() {
     updateHero({ roles: roles.filter((_, i) => i !== index) })
   }
 
+  const handleSocialLinkEdit = (platform: string) => {
+    const link = socialLinks.find(l => l.platform === platform)
+    if (link) {
+      setSocialLinkUrl(link.url)
+      setEditingSocialLink(platform)
+    }
+  }
+
+  const handleSocialLinkSave = () => {
+    if (editingSocialLink) {
+      const newLinks = socialLinks.map(link => 
+        link.platform === editingSocialLink 
+          ? { ...link, url: socialLinkUrl }
+          : link
+      )
+      updateHero({ socialLinks: newLinks })
+      setEditingSocialLink(null)
+      setSocialLinkUrl('')
+    }
+  }
+
+  const handleSocialLinkCancel = () => {
+    setEditingSocialLink(null)
+    setSocialLinkUrl('')
+  }
+
+  const handleCodeLineUpdate = (index: number, newText: string) => {
+    const newLines = [...codeSnippet]
+    newLines[index] = newText
+    updateHero({ codeSnippet: newLines })
+  }
+
+  const handleAddCodeLine = () => {
+    updateHero({ codeSnippet: [...codeSnippet, '// new line'] })
+  }
+
+  const handleRemoveCodeLine = (index: number) => {
+    updateHero({ codeSnippet: codeSnippet.filter((_, i) => i !== index) })
+  }
+
   const getIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
       case 'github':
@@ -94,6 +124,32 @@ export function HeroSection() {
       default:
         return Github
     }
+  }
+
+  const highlightCode = (line: string) => {
+    return line
+      .replace(/\b(const|let|var|while|if|else|return|function|class|import|export|from|default)\b/g, '<kw>$&</kw>')
+      .replace(/"[^"]*"/g, '<str>$&</str>')
+      .replace(/'[^']*'/g, '<str>$&</str>')
+      .replace(/`[^`]*`/g, '<str>$&</str>')
+      .replace(/\b(Infinity|true|false|null|undefined|\d+)\b/g, '<num>$&</num>')
+      .replace(/\/\/.*/g, '<cmt>$&</cmt>')
+      .split(/(<[^>]+>[^<]*<\/[^>]+>)/)
+      .map((part, j) => {
+        if (part.startsWith('<kw>')) {
+          return <span key={j} className="text-neon-secondary">{part.replace(/<\/?kw>/g, '')}</span>
+        }
+        if (part.startsWith('<str>')) {
+          return <span key={j} className="text-green-400">{part.replace(/<\/?str>/g, '')}</span>
+        }
+        if (part.startsWith('<num>')) {
+          return <span key={j} className="text-orange-400">{part.replace(/<\/?num>/g, '')}</span>
+        }
+        if (part.startsWith('<cmt>')) {
+          return <span key={j} className="text-muted-foreground">{part.replace(/<\/?cmt>/g, '')}</span>
+        }
+        return <span key={j} className="text-foreground">{part}</span>
+      })
   }
 
   return (
@@ -255,7 +311,7 @@ export function HeroSection() {
               </a>
             </div>
 
-            {/* Social Links */}
+            {/* Social Links with Inline Edit */}
             <div
               className={`flex gap-4 justify-center lg:justify-start transition-all duration-700 delay-600 ${showGreeting
                   ? 'opacity-100 translate-y-0'
@@ -264,23 +320,78 @@ export function HeroSection() {
             >
               {socialLinks.map(({ platform, url }) => {
                 const Icon = getIcon(platform)
+                const isEditing = editingSocialLink === platform
+                
                 return (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3 rounded-lg glass text-muted-foreground hover:text-primary hover:border-primary/50 transition-all duration-300 group"
-                    aria-label={platform}
-                  >
-                    <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  </a>
+                  <div key={platform} className="relative">
+                    <a
+                      href={isEditMode ? undefined : url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => isEditMode && e.preventDefault()}
+                      className="p-3 rounded-lg glass text-muted-foreground hover:text-primary hover:border-primary/50 transition-all duration-300 group relative block"
+                      aria-label={platform}
+                    >
+                      <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      
+                      {/* Edit icon overlay */}
+                      {isEditMode && !isEditing && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleSocialLinkEdit(platform)
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Pencil className="w-3 h-3 text-primary-foreground" />
+                        </button>
+                      )}
+                    </a>
+
+                    {/* Inline Popover for URL editing */}
+                    {isEditing && (
+                      <div 
+                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 p-3 rounded-lg glass border border-primary/30 z-50 min-w-[250px]"
+                        style={{
+                          background: 'rgba(10, 10, 20, 0.95)',
+                          backdropFilter: 'blur(20px)',
+                        }}
+                      >
+                        <p className="font-mono text-xs text-primary mb-2">{platform} URL:</p>
+                        <input
+                          type="url"
+                          value={socialLinkUrl}
+                          onChange={(e) => setSocialLinkUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="w-full px-3 py-2 rounded-lg bg-muted border border-border text-foreground font-mono text-xs placeholder:text-muted-foreground focus:outline-none focus:border-primary mb-2"
+                          autoFocus
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={handleSocialLinkCancel}
+                            className="p-1.5 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleSocialLinkSave}
+                            className="p-1.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
           </div>
 
-          {/* Right Content - Floating Code Snippet */}
+          {/* Right Content - Floating Code Snippet (Editable) */}
           <div
             className={`hidden lg:block transition-all duration-1000 delay-300 ${showGreeting
                 ? 'opacity-100 translate-x-0'
@@ -296,44 +407,66 @@ export function HeroSection() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                   <div className="w-3 h-3 rounded-full bg-green-500/80" />
                   <span className="ml-4 font-mono text-xs text-muted-foreground">
-                    developer.ts
+                    dev.ts
                   </span>
                 </div>
                 {/* Code content */}
-                <pre className="p-6 font-mono text-sm overflow-hidden">
-                  <code>
-                    {codeSnippet.split('\n').map((line, i) => (
-                      <div key={i} className="flex">
-                        <span className="w-8 text-muted-foreground/50 select-none">
-                          {i + 1}
+                <div className="p-6 font-mono text-sm overflow-hidden">
+                  {codeSnippet.map((line, i) => (
+                    <div
+                      key={i}
+                      className={`flex group relative ${
+                        isEditMode ? 'hover:bg-primary/5 rounded transition-colors' : ''
+                      }`}
+                    >
+                      <span className="w-8 text-muted-foreground/50 select-none flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      
+                      {isEditMode && editingCodeLine === i ? (
+                        <input
+                          type="text"
+                          value={line}
+                          onChange={(e) => handleCodeLineUpdate(i, e.target.value)}
+                          onBlur={() => setEditingCodeLine(null)}
+                          onKeyDown={(e) => e.key === 'Enter' && setEditingCodeLine(null)}
+                          className="flex-1 bg-muted border border-primary/50 rounded px-2 py-0.5 text-foreground font-mono text-sm focus:outline-none"
+                          autoFocus
+                        />
+                      ) : (
+                        <span
+                          className={`flex-1 ${
+                            isEditMode ? 'border border-transparent hover:border-dashed hover:border-primary/50 rounded px-1 -mx-1' : ''
+                          }`}
+                          onClick={() => isEditMode && setEditingCodeLine(i)}
+                        >
+                          {highlightCode(line)}
                         </span>
-                        <span className="flex-1">
-                          {line
-                            .replace(/const|while/g, '<kw>$&</kw>')
-                            .replace(/"[^"]*"/g, '<str>$&</str>')
-                            .replace(/Infinity/g, '<num>$&</num>')
-                            .replace(/\b(name|skills|passion|coffee|developer)\b/g, '<prop>$&</prop>')
-                            .split(/(<[^>]+>[^<]*<\/[^>]+>)/)
-                            .map((part, j) => {
-                              if (part.startsWith('<kw>')) {
-                                return <span key={j} className="text-neon-secondary">{part.replace(/<\/?kw>/g, '')}</span>
-                              }
-                              if (part.startsWith('<str>')) {
-                                return <span key={j} className="text-green-400">{part.replace(/<\/?str>/g, '')}</span>
-                              }
-                              if (part.startsWith('<num>')) {
-                                return <span key={j} className="text-orange-400">{part.replace(/<\/?num>/g, '')}</span>
-                              }
-                              if (part.startsWith('<prop>')) {
-                                return <span key={j} className="text-primary">{part.replace(/<\/?prop>/g, '')}</span>
-                              }
-                              return <span key={j} className="text-foreground">{part}</span>
-                            })}
-                        </span>
-                      </div>
-                    ))}
-                  </code>
-                </pre>
+                      )}
+
+                      {/* Delete button */}
+                      {isEditMode && editingCodeLine !== i && (
+                        <button
+                          onClick={() => handleRemoveCodeLine(i)}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 p-1 rounded bg-destructive/20 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add line button */}
+                  {isEditMode && (
+                    <button
+                      onClick={handleAddCodeLine}
+                      className="mt-2 flex items-center gap-1 px-3 py-1 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-mono hover:bg-primary/20 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add Line
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Decorative elements */}

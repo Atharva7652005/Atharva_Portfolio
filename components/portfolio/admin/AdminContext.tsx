@@ -9,6 +9,7 @@ export interface HeroData {
   subtitle: string
   ctaText: string
   socialLinks: { platform: string; url: string }[]
+  codeSnippet: string[]
 }
 
 export interface TerminalLine {
@@ -22,6 +23,7 @@ export interface AboutData {
   bio: string
   terminalLines: TerminalLine[]
   funFacts: { label: string; value: string }[]
+  profileImage?: string
 }
 
 export interface Skill {
@@ -84,6 +86,20 @@ const defaultData: PortfolioData = {
       { platform: 'LinkedIn', url: '[LINKEDIN_URL]' },
       { platform: 'Twitter', url: '[TWITTER_URL]' },
     ],
+    codeSnippet: [
+      'const developer = {',
+      '  name: "[YOUR NAME]",',
+      '  skills: ["React", "Node.js", "TypeScript"],',
+      '  passion: "Building amazing web apps",',
+      '  coffee: Infinity,',
+      '};',
+      '',
+      'while (developer.coffee > 0) {',
+      '  code();',
+      '  create();',
+      '  innovate();',
+      '}',
+    ],
   },
   about: {
     bio: "[YOUR BIO - Write 2-3 sentences about yourself. What drives you? What's your background? What makes you unique as a developer? Share your passion for technology and your journey in the tech world.]",
@@ -102,6 +118,7 @@ const defaultData: PortfolioData = {
       { label: 'Lines of code', value: '100K+' },
       { label: 'Open source PRs', value: '50+' },
     ],
+    profileImage: '',
   },
   skills: [
     {
@@ -284,7 +301,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const savedData = localStorage.getItem(STORAGE_KEY)
     if (savedData) {
       try {
-        setData(JSON.parse(savedData))
+        const parsed = JSON.parse(savedData)
+        // Merge with defaults to ensure new fields exist
+        setData({
+          ...defaultData,
+          ...parsed,
+          hero: { ...defaultData.hero, ...parsed.hero },
+          about: { ...defaultData.about, ...parsed.about },
+        })
       } catch (e) {
         console.error('Failed to parse saved data:', e)
       }
