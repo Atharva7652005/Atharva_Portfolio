@@ -82,8 +82,8 @@ export function AboutSection() {
 
   const handleProfileImageSave = () => {
     // Validate image URL by attempting to load it
+    // Do NOT use crossOrigin to avoid CORS errors with CDNs
     const img = new window.Image()
-    img.crossOrigin = 'anonymous'
     img.onload = () => {
       updateAbout({ profileImage: profileImageUrl })
       setEditingProfileImage(false)
@@ -92,7 +92,7 @@ export function AboutSection() {
     }
     img.onerror = () => {
       setImageError(true)
-      showToast('Invalid image URL')
+      showToast('Could not load image. Check the URL.')
     }
     img.src = profileImageUrl
   }
@@ -149,7 +149,6 @@ export function AboutSection() {
                       src={profileImage} 
                       alt="Profile"
                       className="w-full h-full object-cover"
-                      crossOrigin="anonymous"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-muted">

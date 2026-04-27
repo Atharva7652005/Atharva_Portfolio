@@ -156,7 +156,8 @@ export function HeroSection() {
     <section
       ref={sectionRef}
       id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
+      style={{ boxSizing: 'border-box' }}
     >
       {/* Animated grid background */}
       <div className="absolute inset-0 grid-bg opacity-30" />

@@ -61,28 +61,30 @@ function ProjectCard({ project, index, isVisible, isEditMode, onEdit, onDelete }
   return (
     <div
       ref={cardRef}
-      className={`glass rounded-xl overflow-hidden transition-all duration-500 hover:border-primary/30 relative ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      } ${project.featured ? 'ring-1 ring-primary/20' : ''}`}
-      style={{ 
+      className={`glass rounded-xl overflow-hidden transition-all duration-500 hover:border-primary/30 relative z-0 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        } ${project.featured ? 'ring-1 ring-primary/20' : ''}`}
+      style={{
         transitionDelay: `${index * 100}ms`,
         transition: 'transform 0.15s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out'
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Edit/Delete buttons */}
+      {/* Edit/Delete buttons - always on top with dark background pill */}
       {isEditMode && (
-        <div className="absolute top-2 left-2 z-20 flex gap-1">
+        <div 
+          className="absolute top-3 right-3 z-50 flex gap-2 px-2 py-1 rounded-full pointer-events-auto"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+        >
           <button
             onClick={onEdit}
-            className="p-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            className="p-2 rounded-lg bg-primary/30 text-primary hover:bg-primary/50 transition-colors"
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={onDelete}
-            className="p-2 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+            className="p-2 rounded-lg bg-destructive/30 text-destructive hover:bg-destructive/50 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -100,8 +102,8 @@ function ProjectCard({ project, index, isVisible, isEditMode, onEdit, onDelete }
 
       {/* Card content */}
       <div className="p-6 relative">
-        {/* Project icon */}
-        <div className="w-12 h-12 rounded-lg glass flex items-center justify-center mb-4 text-primary">
+        {/* Project icon - lower z-index so it never covers action buttons */}
+        <div className="w-12 h-12 rounded-lg glass flex items-center justify-center mb-4 text-primary relative z-[1]">
           <Folder className="w-6 h-6" />
         </div>
 
@@ -120,9 +122,8 @@ function ProjectCard({ project, index, isVisible, isEditMode, onEdit, onDelete }
           {project.techStack.map((tech) => (
             <span
               key={tech}
-              className={`px-2 py-1 rounded-full text-xs font-mono border ${
-                techColors[tech] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-              }`}
+              className={`px-2 py-1 rounded-full text-xs font-mono border ${techColors[tech] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                }`}
             >
               {tech}
             </span>
@@ -318,9 +319,8 @@ export function ProjectsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div
-          className={`text-center mb-16 transition-all duration-700 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}
+          className={`text-center mb-16 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
         >
           <span className="inline-block px-4 py-2 rounded-full glass text-primary font-mono text-sm mb-4">
             {'// Featured Work'}
@@ -368,12 +368,11 @@ export function ProjectsSection() {
 
         {/* View More Button */}
         <div
-          className={`text-center mt-12 transition-all duration-700 delay-500 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}
+          className={`text-center mt-12 transition-all duration-700 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
         >
           <a
-            href="[GITHUB_PROFILE_URL]"
+            href="https://github.com/Atharva7652005"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-primary/50 text-primary font-mono text-sm hover:bg-primary/10 transition-all hover:scale-105"

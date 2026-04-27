@@ -21,7 +21,7 @@ export function Footer() {
 
           {/* Copyright */}
           <p className="font-mono text-sm text-muted-foreground flex items-center gap-1">
-            <span className="text-primary">&copy;</span> {currentYear} [YOUR NAME]. Built with
+            <span className="text-primary">&copy;</span> {currentYear} Atharva. Built with
             <Heart className="w-4 h-4 text-red-500 inline mx-1 animate-pulse" />
             and lots of
             <span className="text-primary ml-1">{'<code />'}</span>
